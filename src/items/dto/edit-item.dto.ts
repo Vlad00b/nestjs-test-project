@@ -1,3 +1,4 @@
-import { CreateItemDto } from "./create-item.dto";
+import { CreateItemDto } from './create-item.dto';
 
-export class EditItemDto extends CreateItemDto {}
+export class EditItemDto extends CreateItemDto {
+}

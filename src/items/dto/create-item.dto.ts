@@ -1,11 +1,14 @@
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateItemDto {
-    @IsNotEmpty()
-    @IsString()
-    public readonly name: string;
+	@ApiProperty({nullable: false})
+	@IsNotEmpty()
+	@IsString()
+	public readonly name: string;
 
-    @IsNotEmpty()
-    @IsString()
-    public readonly type: string;
+	@ApiProperty({nullable: false})
+	@IsNotEmpty()
+	@IsString()
+	public readonly type: string;
 }

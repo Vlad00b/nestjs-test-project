@@ -2,30 +2,32 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 
-export type ItemDocument = HydratedDocument<Item>;
+export type UserDocument = HydratedDocument<User>;
 
 @Schema({
-	collection: 'items',
+	collection: 'users',
 	timestamps: {createdAt: true, updatedAt: false},
 })
-export class Item {
-	@ApiProperty()
+export class User {
+	@ApiProperty({required: true})
+	@Prop({
+		required: true,
+		trim: true,
+		index: true,
+		unique: true,
+	})
+	public username: string;
+
+	@ApiProperty({required: false})
 	@Prop({
 		required: true,
 		trim: true,
 	})
-	public name: string;
+	public password: string;
 
-	@ApiProperty()
-	@Prop({
-		required: true,
-		trim: true,
-	})
-	public type: string;
-
-	@ApiProperty()
+	@ApiProperty({required: true})
 	@Prop()
 	public createdAt: Date;
 }
 
-export const ItemSchema = SchemaFactory.createForClass(Item);
+export const UserSchema = SchemaFactory.createForClass(User);

@@ -1,49 +1,68 @@
-import { Body, Controller, Delete, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query } from "@nestjs/common";
-import { Item } from "./schemas/item.schema";
-import { ItemsService } from "./items.service";
-import { CreateItemDto } from "./dto/create-item.dto";
-import { ApiResponseDto } from "../shared/dto/api-response.dto";
-import { ApiPaginationDto } from "../shared/dto/api-pagination.dto";
-import { StatisticItemDto } from "./dto/statistic-item.dto";
+import { Body, Controller, Delete, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Item } from './schemas/item.schema';
+import { ItemsService } from './items.service';
+import { CreateItemDto } from './dto/create-item.dto';
+import { ApiResponseDto } from '../shared/dto/api-response.dto';
+import { ApiPaginationDto } from '../shared/dto/api-pagination.dto';
+import { StatisticItemDto } from './dto/statistic-item.dto';
+import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { EditItemDto } from './dto/edit-item.dto';
+import { AuthGuard } from '../shared/guards/auth.guard';
 
+@ApiTags('Items')
+@ApiBearerAuth()
+@UseGuards(AuthGuard)
 @Controller()
 export class ItemsController {
-    constructor(private itemsService: ItemsService) {
-    }
+	constructor(private itemsService: ItemsService) {
+	}
 
-    @Get()
-    async getItems(
-        @Query("limit", new ParseIntPipe({ optional: true })) limit?: number,
-        @Query("page", new ParseIntPipe({ optional: true })) page?: number
-    ): Promise<ApiResponseDto<ApiPaginationDto<Item[]>>> {
-        const items = await this.itemsService.getItems(page, limit);
-        return new ApiResponseDto<typeof items>(HttpStatus.OK, "Success", items);
-    }
+	@Get()
+	@ApiQuery({name: 'limit', required: false})
+	@ApiQuery({name: 'page', required: false})
+	@ApiOkResponse({status: HttpStatus.OK, type: Item, isArray: true})
+	public async getItems(
+		@Query('limit', new ParseIntPipe({optional: true})) limit?: number,
+		@Query('page', new ParseIntPipe({optional: true})) page?: number,
+	): Promise<ApiResponseDto<ApiPaginationDto<Item[]>>> {
+		const items = await this.itemsService.getItems(page, limit);
+		return new ApiResponseDto<typeof items>(HttpStatus.OK, items);
+	}
 
-    @Post()
-    async create(@Body() data: CreateItemDto): Promise<ApiResponseDto<undefined>> {
-        await this.itemsService.create(data);
-        return new ApiResponseDto(HttpStatus.CREATED, "Success");
-    }
+	@Post()
+	@ApiBody({required: true, type: CreateItemDto})
+	@ApiOkResponse({status: HttpStatus.CREATED, type: ApiResponseDto})
+	public async create(@Body() data: CreateItemDto): Promise<ApiResponseDto<undefined>> {
+		await this.itemsService.create(data);
+		return new ApiResponseDto(HttpStatus.CREATED);
+	}
 
-    @Put(":id")
-    async edit(@Body() data: CreateItemDto, @Param("id") id: string): Promise<ApiResponseDto<Item>> {
-        const editedItem = await this.itemsService.edit(id, data);
-        return new ApiResponseDto<Item>(HttpStatus.OK, "Success", editedItem);
-    }
+	@Put(':id')
+	@ApiParam({name: 'id', type: String, required: true})
+	@ApiBody({required: true, type: EditItemDto})
+	@ApiOkResponse({status: HttpStatus.OK, type: Item})
+	public async edit(@Body() data: EditItemDto, @Param('id') id: string): Promise<ApiResponseDto<Item>> {
+		const editedItem = await this.itemsService.edit(id, data);
+		return new ApiResponseDto<Item>(HttpStatus.OK, editedItem);
+	}
 
-    @Delete(":id")
-    async remove(@Param("id") id: string): Promise<ApiResponseDto<undefined>> {
-        await this.itemsService.remove(id);
-        return new ApiResponseDto(HttpStatus.OK, "Success");
-    }
+	@Delete(':id')
+	@ApiParam({name: 'id', type: String, required: true})
+	@ApiOkResponse({status: HttpStatus.OK, type: ApiResponseDto})
+	public async remove(@Param('id') id: string): Promise<ApiResponseDto<undefined>> {
+		await this.itemsService.remove(id);
+		return new ApiResponseDto(HttpStatus.OK);
+	}
 
-    @Get('/statistic')
-    async getStatistic(
-        @Query("limit", new ParseIntPipe({ optional: true })) limit?: number,
-        @Query("page", new ParseIntPipe({ optional: true })) page?: number
-    ): Promise<ApiResponseDto<ApiPaginationDto<StatisticItemDto[]>>> {
-        const stat = await this.itemsService.getStatistic(page, limit);
-        return new ApiResponseDto<typeof stat>(HttpStatus.OK, 'Success', stat);
-    }
+	@Get('/statistic')
+	@ApiParam({name: 'limit', required: false})
+	@ApiParam({name: 'page', required: false})
+	@ApiOkResponse({status: HttpStatus.OK, type: StatisticItemDto, isArray: true})
+	public async getStatistic(
+		@Query('limit', new ParseIntPipe({optional: true})) limit?: number,
+		@Query('page', new ParseIntPipe({optional: true})) page?: number,
+	): Promise<ApiResponseDto<ApiPaginationDto<StatisticItemDto[]>>> {
+		const stat = await this.itemsService.getStatistic(page, limit);
+		return new ApiResponseDto<typeof stat>(HttpStatus.OK, stat);
+	}
 }

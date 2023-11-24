@@ -1,9 +1,14 @@
-export class StatisticItemDto {
-    public type: string;
-    public count: number;
+import { ApiProperty } from '@nestjs/swagger';
 
-    constructor(type: string, count: number) {
-        this.type = type;
-        this.count = count;
-    }
+export class StatisticItemDto {
+	@ApiProperty()
+	public type: string;
+
+	@ApiProperty()
+	public count: number;
+
+	constructor(type: string, count: number) {
+		this.type = type;
+		this.count = count;
+	}
 }

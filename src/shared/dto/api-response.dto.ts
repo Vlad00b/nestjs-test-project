@@ -1,13 +1,26 @@
-export class ApiResponseDto<T> {
-    public statusCode: number;
-    public message: string;
-    public data?: T;
+import { HttpStatus } from '@nestjs/common';
+import { ApiProperty } from '@nestjs/swagger';
 
-    constructor(code: number, message: string, response?: T) {
-        this.statusCode = code;
-        this.message = message;
-        if (response) {
-            this.data = response;
-        }
-    }
+export class ApiResponseDto<T> {
+	@ApiProperty()
+	public statusCode: HttpStatus;
+
+	@ApiProperty()
+	public success: boolean = true;
+
+	@ApiProperty({required: false})
+	public message?: string;
+
+	@ApiProperty({required: false, nullable: true})
+	public data?: T;
+
+	constructor(code: number, response?: T, message?: string) {
+		this.statusCode = code;
+		if (message) {
+			this.message = message;
+		}
+		if (response) {
+			this.data = response;
+		}
+	}
 }
