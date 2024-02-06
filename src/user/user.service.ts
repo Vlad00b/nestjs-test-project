@@ -1,29 +1,23 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { User, UserDocument } from './schemas/user.schema';
-import { Model } from 'mongoose';
 import { SignUpDto } from '../auth/dto/sign-up.dto';
 import { ERROR_MESSAGES } from '../shared/constants/message.constants';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
 	constructor(
-		@InjectModel(User.name) private userModel: Model<UserDocument>,
+		@InjectRepository(User) private userRepository: Repository<User>
 	) {
 	}
 
 	public async createUser(data: SignUpDto): Promise<User> {
 		try {
-			const user = new this.userModel(data);
-			const userDoc = await user.save();
-			return userDoc.toObject({
-				transform: (doc, ret) => {
-					delete ret.password;
-					return ret;
-				},
-			});
+			const user = await this.userRepository.save(data);
+			const {password, ...values} = user;
+			return values as User;
 		} catch (err) {
-			console.log(err);
 			let errorMessage = ERROR_MESSAGES.somethingWentWrong;
 			if (typeof err.message === 'string') {
 				if (err.message.includes('duplicate')) {
@@ -38,7 +32,7 @@ export class UserService {
 
 	public async findUserByUsername(username: string) {
 		try {
-			return await this.userModel.findOne({username}).exec();
+			return await this.userRepository.findOneBy({username});
 		} catch (err) {
 			return null;
 		}

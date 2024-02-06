@@ -1,92 +1,46 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { CreateItemDto } from './dto/create-item.dto';
-import { Item, ItemDocument } from './schemas/item.schema';
 import { EditItemDto } from './dto/edit-item.dto';
 import { ApiPaginationDto } from '../shared/dto/api-pagination.dto';
-import { StatisticItemDto } from './dto/statistic-item.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Item } from './entities/item.entity';
+import { Repository } from 'typeorm';
+import { ItemStatistic } from './entities/item-statistic.entity';
 
 @Injectable()
 export class ItemsService {
 	constructor(
-		@InjectModel(Item.name) private itemModel: Model<ItemDocument>,
+		@InjectRepository(Item) private itemRepository: Repository<Item>,
+		@InjectRepository(ItemStatistic) private itemStatisticRepository: Repository<ItemStatistic>,
 	) {
 	}
 
 	public async getItems(page: number = 1, limit: number = 4): Promise<ApiPaginationDto<Item[]>> {
 		const skip = Math.max(0, page - 1) * limit;
-		const items = await this.itemModel
-			.find()
-			.sort({createdAt: -1})
-			.skip(skip)
-			.limit(limit)
-			.exec();
-		const total = await this.getItemsCount();
+		const [items, total] = await this.itemRepository.findAndCount({
+			skip,
+			take: limit,
+			order: {createdAt: 'DESC'}
+		})
 		return new ApiPaginationDto<Item[]>(total, Math.max(1, page), items);
 	}
 
-	public async create(data: CreateItemDto): Promise<Item> {
-		const item = new this.itemModel(data);
-		return item.save();
+	public async create(data: CreateItemDto): Promise<void> {
+		await this.itemRepository.save(data);
 	}
 
 	public async edit(id: string, data: EditItemDto): Promise<Item> {
-		await this.itemModel.findByIdAndUpdate(id, data).exec();
-		return this.itemModel.findById(id);
+		await this.itemRepository.update(id, data);
+		return this.itemRepository.findOneBy({id});
 	}
 
-	public async remove(id: string): Promise<Item> {
-		return this.itemModel.findByIdAndDelete(id).exec();
+	public async remove(id: string): Promise<void> {
+		await this.itemRepository.delete(id);
 	}
 
-	public async getStatistic(page: number = 1, limit: number = 3): Promise<ApiPaginationDto<StatisticItemDto[]>> {
+	public async getStatistic(page: number = 1, limit: number = 3): Promise<ApiPaginationDto<ItemStatistic[]>> {
 		const skip = Math.max(0, page - 1) * limit;
-		const itemGroup = await this.itemModel
-			.aggregate<{
-				count: {total: number};
-				items: [{_id: string; count: number}];
-			}>([
-				{
-					$facet: {
-						count: [
-							{
-								$group: {
-									_id: '$type',
-									count: {$count: {}},
-								},
-							},
-							{$count: 'total'},
-						],
-						items: [
-							{
-								$group: {
-									_id: '$type',
-									count: {$count: {}},
-								},
-							},
-							{
-								$sort: {_id: 1},
-							},
-							{
-								$skip: skip,
-							},
-							{
-								$limit: limit,
-							},
-						],
-					},
-				},
-			])
-			.exec();
-		return new ApiPaginationDto<StatisticItemDto[]>(
-			itemGroup[0].count[0].total,
-			Math.max(1, page),
-			itemGroup[0].items.map((item) => new StatisticItemDto(item._id, item.count)),
-		);
-	}
-
-	private getItemsCount(): Promise<number> {
-		return this.itemModel.countDocuments().exec();
+		const [statistic, count] = await this.itemStatisticRepository.findAndCount({skip, take: limit});
+		return new ApiPaginationDto<ItemStatistic[]>(count, Math.max(1, page), statistic);
 	}
 }

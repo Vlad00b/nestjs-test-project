@@ -18,7 +18,7 @@ export class AuthService {
 	public async signUp(data: SignUpDto): Promise<AuthResponseDto> {
 		data.password = await bcrypt.hash(data.password, 10);
 		const user = await this.userService.createUser(data);
-		const token = await this.jwtService.signAsync({id: user['_id'], username: user.username});
+		const token = await this.jwtService.signAsync({id: user.id, username: user.username});
 		return new AuthResponseDto(token, user);
 	}
 
@@ -27,7 +27,7 @@ export class AuthService {
 		if (!user) {
 			throw new NotFoundException(ERROR_MESSAGES.userNotFound);
 		}
-		let isSame;
+		let isSame: boolean;
 		try {
 			isSame = await bcrypt.compare(data.password, user.password);
 		} catch {
@@ -36,15 +36,7 @@ export class AuthService {
 		if (!isSame) {
 			throw new UnauthorizedException(ERROR_MESSAGES.invalidCredential);
 		}
-		const token = await this.jwtService.signAsync({id: user['_id'], username: user.username});
-		return new AuthResponseDto(
-			token,
-			user.toObject({
-				transform: (doc, ret) => {
-					delete ret.password;
-					return ret;
-				},
-			})
-		);
+		const token = await this.jwtService.signAsync({id: user.id, username: user.username});
+		return new AuthResponseDto(token, user);
 	}
 }

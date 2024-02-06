@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { RouterModule } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { APP_ROUTES } from './app.routes';
 import { ItemsModule } from './items/items.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
 	imports: [
@@ -14,10 +14,19 @@ import { AuthModule } from './auth/auth.module';
 			isGlobal: true,
 			envFilePath: '.env.dev',
 		}),
-		MongooseModule.forRootAsync({
+		TypeOrmModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
-			useFactory: async (configService: ConfigService) => ({uri: configService.get<string>('MONGO_DB_URL')})
+			useFactory: (configService: ConfigService) => ({
+				type: configService.get<any>('DB_TYPE'),
+				host: configService.get<string>('DB_HOST'),
+				port: Number(configService.get<string>('DB_PORT')),
+				username: configService.get<string>('DB_USER'),
+				password: configService.get<string>('DB_PASSWORD'),
+				database: configService.get<string>('DB_NAME'),
+				synchronize: true,
+				entities: [__dirname + '/**/*.entity.{js, ts}']
+			})
 		}),
 		JwtModule.registerAsync({
 			global: true,

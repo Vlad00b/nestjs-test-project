@@ -1,13 +1,13 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { Item } from './schemas/item.schema';
 import { ItemsService } from './items.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { ApiResponseDto } from '../shared/dto/api-response.dto';
 import { ApiPaginationDto } from '../shared/dto/api-pagination.dto';
-import { StatisticItemDto } from './dto/statistic-item.dto';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { EditItemDto } from './dto/edit-item.dto';
 import { AuthGuard } from '../shared/guards/auth.guard';
+import { Item } from './entities/item.entity';
+import { ItemStatistic } from './entities/item-statistic.entity';
 
 @ApiTags('Items')
 @ApiBearerAuth()
@@ -57,11 +57,11 @@ export class ItemsController {
 	@Get('/statistic')
 	@ApiParam({name: 'limit', required: false})
 	@ApiParam({name: 'page', required: false})
-	@ApiOkResponse({status: HttpStatus.OK, type: StatisticItemDto, isArray: true})
+	@ApiOkResponse({status: HttpStatus.OK, type: ItemStatistic, isArray: true})
 	public async getStatistic(
 		@Query('limit', new ParseIntPipe({optional: true})) limit?: number,
 		@Query('page', new ParseIntPipe({optional: true})) page?: number,
-	): Promise<ApiResponseDto<ApiPaginationDto<StatisticItemDto[]>>> {
+	): Promise<ApiResponseDto<ApiPaginationDto<ItemStatistic[]>>> {
 		const stat = await this.itemsService.getStatistic(page, limit);
 		return new ApiResponseDto<typeof stat>(HttpStatus.OK, stat);
 	}
